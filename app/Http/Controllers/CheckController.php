@@ -93,9 +93,11 @@ class CheckController extends Controller
     public function unitError()
     {
         $duplicates = $this->duplicateUnit();
+        $malformeds = $this->malformedUnit();
 
         return compact([
             'duplicates',
+            'malformeds',
         ]);
     }
 
@@ -111,6 +113,37 @@ class CheckController extends Controller
         $sipd = $sipd->whereRaw('option_name like ?', ['_crb_unit_%']);
         $sipd = $sipd->groupBy('option_value');
         $sipd = $sipd->having(DB::raw('COUNT(option_value)'), '>', 1);
+
+        $sipd = $sipd->get();
+
+        return $sipd;
+    }
+
+    private function malformedUnit()
+    {
+        $sipd = DB::connection('sipd');
+
+        $sipd = $sipd->table('wp_options');
+        $sipd = $sipd->select(
+            'option_value',
+            DB::raw('
+                ROUND (   
+                    (
+                        LENGTH(option_value)
+                        - LENGTH( REPLACE ( option_value, ".", "") ) 
+                    ) / LENGTH(".")        
+                ) AS total
+            '),
+        );
+        $sipd = $sipd->whereRaw('option_name like ?', ['_crb_unit_%']);
+        $sipd = $sipd->whereRaw('
+            ROUND (   
+                (
+                    LENGTH(option_value)
+                    - LENGTH( REPLACE ( option_value, ".", "") ) 
+                ) / LENGTH(".")        
+            ) < 3
+        ');
 
         $sipd = $sipd->get();
 
