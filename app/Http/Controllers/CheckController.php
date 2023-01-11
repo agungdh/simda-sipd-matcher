@@ -73,6 +73,17 @@ class CheckController extends Controller
         return $simda;
     }
 
+    public function rka()
+    {
+        $sipd = DB::connection('sipd')->table('data_rka')->sum('rincian');
+        $simda = DB::connection('simda')->table('ta_belanja_rinc_sub')->sum('total');
+
+        return compact([
+            'sipd',
+            'simda',
+        ]);
+    }
+
     private function getSipdUnit()
     {
         $sipd = DB::connection('sipd');

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('check')->group(function () {
     Route::get('/unit', [CheckController::class, 'unit']);
     Route::get('/unit/error', [CheckController::class, 'unitError']);
+    Route::get('/rka', [CheckController::class, 'rka']);
 });
 
 Route::prefix('reset')->group(function () {
