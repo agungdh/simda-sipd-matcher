@@ -75,12 +75,54 @@ class CheckController extends Controller
 
     public function rka()
     {
-        $sipd = DB::connection('sipd')->table('data_rka')->sum('rincian');
-        $simda = DB::connection('simda')->table('ta_belanja_rinc_sub')->sum('total');
+        $sipd['total'] = DB::connection('sipd')->table('data_rka')->sum('rincian');
+        $simda['total'] = DB::connection('simda')->table('ta_belanja_rinc_sub')->sum('total');
+
+        $sipd['jumlah'] = DB::connection('sipd')->table('data_rka')->count('rincian');
+        $simda['jumlah'] = DB::connection('simda')->table('ta_belanja_rinc_sub')->count('total');
+
+        $subUnits = DB::connection('simda')->table('ref_sub_unit')->get();
+
+        $subUnits->each(function ($subUnit) {
+            $simda = DB::connection('simda')->table('ta_belanja_rinc_sub')->where([
+                'kd_urusan' => $subUnit->kd_urusan,
+                'kd_bidang' => $subUnit->kd_bidang,
+                'kd_unit' => $subUnit->kd_unit,
+                'kd_sub' => $subUnit->kd_sub,
+            ]);
+
+            $sipd = DB::connection('sipd');
+
+            $sipd = $sipd->table('data_rka as dr');
+            $sipd = $sipd->join('data_sub_keg_bl as dskb', function ($join) {
+                $join->on('dr.kode_bl', '=', 'dskb.kode_bl');
+                $join->on('dr.kode_sbl', '=', 'dskb.kode_sbl');
+            });
+            $sipd = $sipd->join('data_unit as du', 'dskb.id_sub_skpd', '=', 'du.id_skpd');
+            $sipd = $sipd->join('wp_options as wo', 'du.id_skpd', '=', DB::raw('substring(wo.option_name, 11, 4)'));
+            $sipd = $sipd->where('option_value', implode('.', [
+                $subUnit->kd_urusan,
+                $subUnit->kd_bidang,
+                $subUnit->kd_unit,
+                $subUnit->kd_sub,
+            ]));
+
+            $subUnit->sipd['total'] = $sipd->sum('rincian');
+            $subUnit->simda['total'] = $simda->sum('total');
+
+            $subUnit->sipd['jumlah'] = $sipd->count('rincian');
+            $subUnit->simda['jumlah'] = $simda->count('total');
+
+            $subUnit->kurang['total'] = $subUnit->simda['total'] - $subUnit->sipd['total'];
+            $subUnit->kurang['jumlah'] = $subUnit->simda['jumlah'] - $subUnit->sipd['jumlah'];
+
+            dd($subUnit);
+        });
 
         return compact([
             'sipd',
             'simda',
+            'subUnits',
         ]);
     }
 
