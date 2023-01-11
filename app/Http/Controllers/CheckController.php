@@ -86,7 +86,7 @@ class CheckController extends Controller
         $finished = collect();
         $unfinished = collect();
 
-        $subUnits = DB::connection('simda')->table('ref_sub_unit')->limit(5)->get();
+        $subUnits = DB::connection('simda')->table('ref_sub_unit')->get();
 
         $subUnits->each(function ($subUnit) use (&$stat, $finished, $unfinished) {
             $simda = DB::connection('simda')->table('ta_belanja_rinc_sub')->where([
