@@ -75,15 +75,20 @@ class CheckController extends Controller
 
     public function rka()
     {
-        $sipd['total'] = DB::connection('sipd')->table('data_rka')->sum('rincian');
-        $simda['total'] = DB::connection('simda')->table('ta_belanja_rinc_sub')->sum('total');
+        $stat['sipd']['total'] = 0;
+        $stat['simda']['total'] = 0;
+        $stat['stat']['total'] = 0;
 
-        $sipd['jumlah'] = DB::connection('sipd')->table('data_rka')->count('rincian');
-        $simda['jumlah'] = DB::connection('simda')->table('ta_belanja_rinc_sub')->count('total');
+        $stat['sipd']['jumlah'] = 0;
+        $stat['simda']['jumlah'] = 0;
+        $stat['stat']['jumlah'] = 0;
 
-        $subUnits = DB::connection('simda')->table('ref_sub_unit')->get();
+        $finished = collect();
+        $unfinished = collect();
 
-        $subUnits->each(function ($subUnit) {
+        $subUnits = DB::connection('simda')->table('ref_sub_unit')->limit(5)->get();
+
+        $subUnits->each(function ($subUnit) use (&$stat, $finished, $unfinished) {
             $simda = DB::connection('simda')->table('ta_belanja_rinc_sub')->where([
                 'kd_urusan' => $subUnit->kd_urusan,
                 'kd_bidang' => $subUnit->kd_bidang,
@@ -113,15 +118,27 @@ class CheckController extends Controller
             $subUnit->sipd['jumlah'] = $sipd->count('rincian');
             $subUnit->simda['jumlah'] = $simda->count('total');
 
-            $subUnit->kurang['total'] = $subUnit->simda['total'] - $subUnit->sipd['total'];
-            $subUnit->kurang['jumlah'] = $subUnit->simda['jumlah'] - $subUnit->sipd['jumlah'];
+            $subUnit->stat['total'] = $subUnit->simda['total'] - $subUnit->sipd['total'];
+            $subUnit->stat['jumlah'] = $subUnit->simda['jumlah'] - $subUnit->sipd['jumlah'];
 
-            dd($subUnit);
+            $stat['simda']['total'] += $subUnit->simda['total'];
+            $stat['simda']['jumlah'] += $subUnit->simda['jumlah'];
+            $stat['sipd']['total'] += $subUnit->sipd['total'];
+            $stat['sipd']['jumlah'] += $subUnit->sipd['jumlah'];
+            $stat['stat']['total'] += $subUnit->stat['total'];
+            $stat['stat']['jumlah'] += $subUnit->stat['jumlah'];
+
+            if ($subUnit->stat['total'] == 0 && $subUnit->stat['jumlah'] == 0) {
+                $finished->push($subUnit);
+            } else {
+                $unfinished->push($subUnit);
+            }
         });
 
         return compact([
-            'sipd',
-            'simda',
+            'stat',
+            'finished',
+            'unfinished',
             'subUnits',
         ]);
     }
