@@ -75,6 +75,8 @@ class CheckController extends Controller
 
     public function rka()
     {
+        $stat['start'] = date('Y-m-d H:i:s');
+
         $stat['sipd']['total'] = 0;
         $stat['simda']['total'] = 0;
         $stat['stat']['total'] = 0;
@@ -86,7 +88,7 @@ class CheckController extends Controller
         $finished = collect();
         $unfinished = collect();
 
-        $subUnits = DB::connection('simda')->table('ref_sub_unit')->get();
+        $subUnits = DB::connection('simda')->table('ref_sub_unit')->limit(2)->get();
 
         $subUnits->each(function ($subUnit) use (&$stat, $finished, $unfinished) {
             $simda = DB::connection('simda')->table('ta_belanja_rinc_sub')->where([
@@ -134,6 +136,9 @@ class CheckController extends Controller
                 $unfinished->push($subUnit);
             }
         });
+
+        $stat['end'] = date('Y-m-d H:i:s');
+        $stat['duration'] = strtotime($stat['end']) - strtotime($stat['start']);
 
         return compact([
             'stat',
