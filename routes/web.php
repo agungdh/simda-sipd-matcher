@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CheckController;
 use App\Http\Controllers\ResetController;
+use App\Http\Controllers\SetController;
 use App\Http\Controllers\SetDebugController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,7 @@ Route::prefix('reset')->group(function () {
 });
 
 Route::prefix('set')->group(function () {
+    Route::get('/nonprogramkegiatan', [SetController::class, 'nonprogramkegiatan']);
     Route::prefix('debug')->group(function () {
         Route::get('/yes', [SetDebugController::class, 'yes']);
         Route::get('/no', [SetDebugController::class, 'no']);
